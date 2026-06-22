@@ -2159,6 +2159,8 @@ async def test_parallel_execution():
 
 ## 习题
 
+> <strong>参考答案</strong>：可前往 [《第七章习题参考答案》](../../Extra-Chapter/Exercises/Chapter07-第七章习题参考答案.md) 查看。
+
 1. 本章构建了 `HelloAgents` 框架，并阐述了"为何需要自建Agent框架"。请分析：
 
    - 在7.1.1节中提到了当前主流框架的四个主要局限性。结合你在[第六章习题](../chapter6/第六章%20框架开发实践.md#习题)或实际项目中使用过的某个框架的实际经验，说明这些问题是如何影响开发效率的。
