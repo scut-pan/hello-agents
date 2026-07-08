@@ -139,32 +139,25 @@ python3 --version
 
 ## 四、项目环境配置
 
-### 4.1 创建虚拟环境（推荐）
+### 4.1 使用 uv 管理环境
+
+本仓库统一使用 `uv` 管理 Python 依赖。仓库根目录已经提供了 `pyproject.toml`，因此可以直接在项目根目录执行 `uv` 命令。
 
 ```bash
 # 进入项目目录
-cd "hello-agents"
+cd hello-agents
 
-# 创建虚拟环境
-python -m venv venv
-
-# 激活虚拟环境
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+# 查看 uv 是否可用
+uv --version
 ```
+
+如果本机尚未安装 `uv`，请参考官方安装说明：<https://docs.astral.sh/uv/getting-started/installation/>
 
 ### 4.2 安装依赖包
 
 ```bash
-# 安装核心依赖
-pip install requests>=2.31.0
-pip install tavily-python>=0.3.0
-pip install openai>=1.0.0
-
-# 可选：安装其他常用包
-pip install python-dotenv>=1.0.0
+# 同步项目依赖
+uv sync
 ```
 
 ### 4.3 环境变量配置
@@ -174,9 +167,11 @@ pip install python-dotenv>=1.0.0
 在项目根目录创建 `.env` 文件：
 
 ```bash
-# 在项目根目录创建 .env 文件
-touch .env  # Linux/macOS
-# 或在 Windows 中手动创建
+# Linux/macOS
+touch .env
+
+# Windows PowerShell
+New-Item -Path .env -ItemType File
 ```
 
 编辑 `.env` 文件，添加以下内容：
@@ -185,16 +180,15 @@ touch .env  # Linux/macOS
 # Tavily API 配置
 TAVILY_API_KEY=your_tavily_api_key
 
-# 大语言模型 API 配置（选择其中一种）
-# 选项一：AIHubmix
-OPENAI_API_KEY=your_aihubmix_api_key
-OPENAI_BASE_URL=https://aihubmix.com/v1
-MODEL_NAME=xxxx
+# 大语言模型 API 配置（推荐直接与 FirstAgentTest.py 保持一致）
+API_KEY=your_llm_api_key
+BASE_URL=https://aihubmix.com/v1
+MODEL_ID=coding-glm-4.7-free
 
-# 选项二：Modelscope
-# OPENAI_API_KEY=your_modelscope_api_key
-# OPENAI_BASE_URL=https://api-inference.modelscope.cn/v1/
-# MODEL_NAME=xxxx
+# 兼容写法：如果您已经习惯 OpenAI 风格命名，也可以使用下面这组变量
+# OPENAI_API_KEY=your_llm_api_key
+# OPENAI_BASE_URL=https://aihubmix.com/v1
+# MODEL_NAME=coding-glm-4.7-free
 ```
 
 #### 方法二：系统环境变量
@@ -220,89 +214,55 @@ source ~/.bashrc
 
 ### 5.1 修改 FirstAgentTest.py 配置
 
-打开 `code/chapter1/FirstAgentTest.py` 文件，找到第 143-148 行的配置部分：
+当前版本的 `code/chapter1/FirstAgentTest.py` 已经改为**直接读取环境变量**，无需再手动修改源码。只要完成上面的 `.env` 或系统环境变量配置即可运行。
 
-```python
-# --- 1. 配置LLM客户端 ---
-# 请根据您使用的服务，将这里替换成对应的凭证和地址
-API_KEY = "YOUR_API_KEY"
-BASE_URL = "YOUR_BASE_URL"
-MODEL_ID = "YOUR_MODEL_ID"
-os.environ['TAVILY_API_KEY'] = "YOUR_TAVILY_API_KEY"
-```
+其中会读取以下变量：
 
-**替换为您的实际配置：**
-
-#### 使用 AIHubmix 的配置示例：
-```python
-API_KEY = "your_aihubmix_api_key"
-BASE_URL = "https://aihubmix.com/v1"
-MODEL_ID = "coding-glm-4.7-free"
-os.environ['TAVILY_API_KEY'] = "YOUR_TAVILY_API_KEY"
-```
+- `API_KEY`
+- `BASE_URL`
+- `MODEL_ID`
+- `TAVILY_API_KEY`
 
 ## 六、运行验证
 
 ### 6.1 测试网络连接
 
-首先测试各个 API 的连通性：
+仓库内已经提供了可直接执行的测试脚本 `code/chapter1/test_api_connectivity.py`，用于验证：
 
-```python
-# 测试天气 API
-import requests
-response = requests.get("https://wttr.in/Beijing?format=j1")
-print("天气API状态:", response.status_code)
+- `wttr.in` 天气接口
+- `Tavily Search API`
+- OpenAI 兼容 `LLM API`
 
-# 测试 Tavily API
-from tavily import TavilyClient
-tavily = TavilyClient(api_key="your_tavily_key")
-try:
-    result = tavily.search("test", search_depth="basic")
-    print("Tavily API 连接成功")
-except Exception as e:
-    print("Tavily API 错误:", e)
+运行方式如下：
 
-# 测试 LLM API - AIHubmix
-from openai import OpenAI
-client = OpenAI(
-    api_key="your_aihubmix_api_key",
-    base_url="https://aihubmix.com/v1"
-)
-try:
-    response = client.chat.completions.create(
-        model="coding-glm-4.7-free",
-        messages=[{"role": "user", "content": "Hello"}],
-        max_tokens=10
-    )
-    print("LLM API 连接成功:", response.choices[0].message.content)
-except Exception as e:
-    print("LLM API 错误:", e)
+```bash
+# 在项目根目录执行
+uv run python code/chapter1/test_api_connectivity.py
+```
 
-# 测试 LLM API - ModelScope（如果您使用的是 ModelScope，请取消注释并替换配置）
-# from openai import OpenAI
-# client = OpenAI(
-#     api_key="your_modelscope_api_key",
-#     base_url="https://api-inference.modelscope.cn/v1/"
-# )
-# try:
-#     response = client.chat.completions.create(
-#         model="Qwen/Qwen2.5-72B-Instruct",
-#         messages=[{"role": "user", "content": "Hello"}],
-#         max_tokens=10
-#     )
-#     print("LLM API 连接成功:", response.choices[0].message.content)
-# except Exception as e:
-#     print("LLM API 错误:", e)
+如果您的系统中 `uv` 默认缓存目录不可写，可以临时指定缓存目录：
+
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run python code/chapter1/test_api_connectivity.py
+```
+
+预期输出示例：
+
+```text
+开始测试 6.1 网络连通性...
+
+[PASS] 天气 API: HTTP 200，天气 Clear，气温 28C
+[PASS] Tavily API: query='test connectivity'，results=1，answer=有
+[PASS] LLM API: 模型 coding-glm-4.7-free 调用成功，响应片段：'OK'
+
+共 3 项，成功 3 项，失败 0 项。
 ```
 
 ### 6.2 运行完整程序
 
 ```bash
-# 确保在正确目录
-cd "hello-agents\code\chapter1"
-
-# 运行程序
-python FirstAgentTest.py
+# 在项目根目录执行
+uv run python code/chapter1/FirstAgentTest.py
 ```
 
 ### 6.3 预期输出
@@ -344,20 +304,16 @@ Observation: 根据搜索，为您找到以下信息：...
 
 解决方案：使用国内镜像源
 ```bash
-# 临时使用清华镜像
-pip install -i https://pypi.tuna.tsinghua.edu.cn/simple requests tavily-python openai
-
-# 永久配置镜像源
-pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+# 临时使用清华镜像同步依赖
+uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 **问题：ModuleNotFoundError**
 
 解决方案：
 ```bash
-# 确认虚拟环境已激活
-# 重新安装缺失的包
-pip install requests tavily-python openai python-dotenv
+# 重新同步项目依赖
+uv sync
 ```
 
 ### 7.2 API 调用问题
@@ -393,4 +349,3 @@ result = client.search("test")
 4. 实现更复杂的 Agent 逻辑
 
 按照本文档的步骤操作，您应该能够成功运行智能旅行助手代码，并理解基于工具调用的 Agent 实现原理。
-
